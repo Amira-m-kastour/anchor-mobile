@@ -9,12 +9,25 @@
   let filt = null; let pendingFiles = [];
   let dsCheck = null;
 
+  // every change of the analysed records gets a stamp; figures added to the report remember the stamp they were made with
+  const SRC = { files: 'database exports', openalex: 'OpenAlex', refs: "the article's reference list", sample: 'sample data' };
+  function stampData(b) { b.stamp = U.now() + ' #' + Date.now().toString(36); b.desc = `${SRC[b.source] || b.source || 'data'}, ${b.M ? b.M.n : 0} records`; }
+  // a new import or an exclusion changes what phases C, H and O were approved on
+  function dataChanged(what) {
+    const st = S.st; const flagged = ['C', 'H', 'O'].filter(j => st.phases[j].status === 'approved');
+    flagged.forEach(j => { st.phases[j].status = 'needs review'; });
+    if (flagged.length) { S.logDecision('N', 'Data changed: ' + what, "Phases marked 'needs review': " + flagged.join(', ')); U.toast(t('Phases {p} need review.', { p: flagged.join(', ') }), 'warn'); }
+    const n = S.staleItems().length; if (n) U.toast(t('{n} figure(s) in the report were made from earlier data: see phase C.', { n: n }), 'warn');
+  }
   function setBiblio(M_all, log, dup, source) {
-    const b = S.st.biblio; b.M_all = M_all; b.M = M_all; b.log = log; b.dup = dup || 0; b.source = source; b.retracted_removed = []; b.changed = true; filt = null; dsCheck = null; S.bibReady(); S.changed('biblio');
+    const b = S.st.biblio; const had = !!b.M; b.M_all = M_all; b.M = M_all; b.log = log; b.dup = dup || 0; b.source = source; b.retracted_removed = []; b.changed = true; stampData(b); filt = null; dsCheck = null; S.bibReady(); S.changed('biblio');
+    if (had) dataChanged(`new data imported (${M_all.n} records)`);
   }
   root.addReportItem = async function (label, chart, table, phase, note) {
     let png = null; try { if (chart) png = (await CH.png(chart, 1000)).png; } catch (e) { console.warn(e); }
-    S.st.report_items.push({ id: U.uid(), label: label, note: note || '', phase: phase || 'C', table: table ? { cols: table.cols, rows: table.rows.slice(0, 30) } : null, chart: chart || null, png: png });
+    const b = S.st.biblio; const bib = (phase || 'C') === 'C' && b.stamp;
+    if (bib) note = [note, `Data: ${b.desc} (${b.stamp.slice(0, 16)}).`].filter(Boolean).join(' ');
+    S.st.report_items.push({ id: U.uid(), label: label, note: note || '', phase: phase || 'C', data_stamp: bib ? b.stamp : null, table: table ? { cols: table.cols, rows: table.rows.slice(0, 30) } : null, chart: chart || null, png: png });
     S.logDecision(phase || 'C', 'Added to the report', label); U.toast(t('Added to the report (phase {p}).', { p: phase || 'C' }), 'ok');
   };
 
@@ -100,7 +113,8 @@
       h('div.btns', h('button.btn.sm', { onclick: () => { const keep = [];
         for (let i = 0; i < M.n; i++) { const py = M.PY[i]; if (py === null || py < filt.y0 || py > filt.y1) continue; if (filt.types && M.DT && !filt.types.map(x => String(x).toUpperCase()).includes(String(M.DT[i]).toUpperCase())) continue;
           if (filt.langs && M.LA && !filt.langs.map(x => String(x).toUpperCase()).includes(String(M.LA[i]).toUpperCase())) continue; if (filt.tc > 0 && !(M.TC[i] >= filt.tc)) continue; keep.push(i); }
-        b.M = BX.subset(M, keep); b.changed = true; S.bibReady(); S.changed('biblio'); U.toast(t('{n} of {m} records kept.', { n: keep.length, m: M.n }), 'ok'); rerender(); } }, U.icon('filter'), t('Apply filters'))));
+        b.M = BX.subset(M, keep); b.changed = true; stampData(b); S.bibReady(); S.changed('biblio'); U.toast(t('{n} of {m} records kept.', { n: keep.length, m: M.n }), 'ok');
+        const ns = S.staleItems().length; if (ns) U.toast(t('{n} figure(s) in the report were made from earlier data: see phase C.', { n: ns }), 'warn'); rerender(); } }, U.icon('filter'), t('Apply filters'))));
   }
   function retractionCard() {
     const b = S.st.biblio; const M = b.M; const d = dsCheck; const rr = b.retracted_removed || []; let body;
@@ -125,8 +139,9 @@
     const kAll = keepIdx(b.M_all), kUse = keepIdx(b.M); const n = b.M_all.n - kAll.length;
     if (!n) return U.toast(t('These records are no longer in the dataset.'), 'info');
     const at = U.now(); b.retracted_removed = (b.retracted_removed || []).concat(fl.filter(f => dois.has(O.norm(f.doi))).map(f => ({ record: f.record || f.doi, doi: O.norm(f.doi), notice: f.notice || '', removed_at: at })));
-    b.M_all = BX.subset(b.M_all, kAll); b.M = BX.subset(b.M, kUse); b.changed = true; S.bibReady(); S.changed('biblio');
+    b.M_all = BX.subset(b.M_all, kAll); b.M = BX.subset(b.M, kUse); b.changed = true; stampData(b); S.bibReady(); S.changed('biblio');
     S.logDecision('N', `${n} retracted record(s) excluded from the bibliometric dataset`, Array.from(dois).map(x => 'doi:' + x).join('; '));
+    dataChanged(`${n} retracted record(s) excluded`);
     U.toast(t('{n} retracted record(s) excluded. Re-run your analyses; figures already added to the report were made before this change.', { n: n }), 'warn'); rerender();
   }
   async function exportXlsx() {

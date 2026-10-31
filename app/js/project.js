@@ -66,9 +66,10 @@
       q.accepted = arr(p.accepted).map(r => { const o = {}; for (const k of Object.keys(r || {})) o[k] = k === 'year' ? (Array.isArray(r[k]) ? r[k][0] : r[k]) : str(r[k]); return o; }); }
     st.decisions = dfRows(g('decisions')).map(r => ({ time: str(r.time), phase: str(r.phase), decision: str(r.decision), note: str(r.note) }));
     st.prompts = dfRows(g('prompts')).map(r => ({ time: str(r.time), phase: str(r.phase), mode: str(r.mode), prompt: str(r.prompt) }));
+    st.draft_versions = dfRows(g('draft_versions')).map(r => ({ phase: str(r.phase), time: str(r.time), source: str(r.source), text: str(r.text) }));
     const b = g('biblio') || {};
     st.biblio.M_all = P.MfromDF(b.M_all) || P.MfromDF(b.M); st.biblio.M = P.MfromDF(b.M) || st.biblio.M_all;
-    st.biblio.dup = Number(b.dup) || 0; st.biblio.source = str(b.source);
+    st.biblio.dup = Number(b.dup) || 0; st.biblio.source = str(b.source); st.biblio.stamp = b.stamp ? str(b.stamp) : null; st.biblio.desc = b.desc ? str(b.desc) : null;
     st.biblio.retracted_removed = b.retracted_removed && b.retracted_removed.__df ? dfRows(b.retracted_removed).map(r => ({ record: str(r.record), doi: str(r.doi), notice: str(r.notice), removed_at: str(r.removed_at) })) : [];
     st.biblio.log = b.log && b.log.__df ? dfRows(b.log).map(r => ({ file: str(r.file), database: str(r.database), records: Number(r.records) || 0 })) : null;
     const pr = plain(g('prisma')); if (pr) for (const k of ['excluded_screen', 'assessed', 'excluded_full', 'included']) if (pr[k] !== null && pr[k] !== undefined) st.prisma_manual[k] = Number(arr(pr[k])[0]);
@@ -86,7 +87,7 @@
     const itemsNode = R.listGet(tree, 'report_items');
     if (itemsNode && itemsNode.t === T.VEC) st.report_items = itemsNode.v.map((node, k) => { const it = R.toJS(node) || {};
       const pngNode = R.listGet(node, 'png_raw'); return { id: 'd' + k, label: str(it.label), note: str(it.note), phase: str(it.phase) || 'C', table: it.table && it.table.__df ? { cols: it.table.names, rows: dfRows(it.table).map(r => it.table.names.map(n => r[n])) } : null,
-        png: pngNode && pngNode.t === T.RAW ? pngNode.v : null, from_desktop: true, node: k }; });
+        png: pngNode && pngNode.t === T.RAW ? pngNode.v : null, data_stamp: it.data_stamp ? str(it.data_stamp) : null, from_desktop: true, node: k }; });
     st.app_version_saved = str(g('app_version'));
     return st;
   };
@@ -139,7 +140,7 @@
   P.itemR = async function (it) {
     const tb = it.table ? df(it.table.cols.map(String), it.table.cols.map((c, j) => { const v = it.table.rows.slice(0, 30).map(r => r[j]); return v.every(x => x === null || typeof x === 'number') ? numCol(v) : strCol(v.map(x => x === null ? null : String(x))); })) : NULL;
     const png = it.png ? { t: T.RAW, v: it.png } : NULL;
-    return list([['label', one(it.label)], ['note', one(it.note)], ['table', tb], ['png_raw', png], ['pdf_raw', NULL], ['phase', one(it.phase || 'C')], ['code', NULL]]);
+    return list([['label', one(it.label)], ['note', one(it.note)], ['table', tb], ['png_raw', png], ['pdf_raw', NULL], ['phase', one(it.phase || 'C')], ['code', NULL], ['data_stamp', it.data_stamp ? one(it.data_stamp) : NULL]]);
   };
 
   // the whole project; origin = the bytes of the .anchor file this review was opened from (kept on the device), if any
@@ -165,10 +166,11 @@
     put('phases', list(S.PHASE_IDS.map(id => [id, phaseR(st.phases[id])])), 3);
     put('decisions', df(['time', 'phase', 'decision', 'note'], ['time', 'phase', 'decision', 'note'].map(k => strCol(st.decisions.map(r => r[k])))));
     put('prompts', df(['time', 'phase', 'mode', 'prompt'], ['time', 'phase', 'mode', 'prompt'].map(k => strCol(st.prompts.map(r => r[k])))));
+    put('draft_versions', df(['phase', 'time', 'source', 'text'], ['phase', 'time', 'source', 'text'].map(k => strCol((st.draft_versions || []).map(r => r[k])))));
     const b = st.biblio;
     if (st.biblio.changed || !R.listGet(tree, 'biblio')) put('biblio', list([['M', b.M ? P.MtoDF(b.M) : NULL], ['M_all', b.M_all ? P.MtoDF(b.M_all) : NULL], ['R', NULL],
       ['log', b.log ? df(['file', 'database', 'records'], [strCol(b.log.map(r => r.file)), strCol(b.log.map(r => r.database)), intCol(b.log.map(r => r.records))]) : NULL],
-      ['dup', num(b.dup || 0)], ['source', one(b.source || '')],
+      ['dup', num(b.dup || 0)], ['source', one(b.source || '')], ['stamp', b.stamp ? one(b.stamp) : NULL], ['desc', b.desc ? one(b.desc) : NULL],
       ['retracted_removed', (b.retracted_removed || []).length ? df(['record', 'doi', 'notice', 'removed_at'], ['record', 'doi', 'notice', 'removed_at'].map(k => strCol(b.retracted_removed.map(r => r[k])))) : NULL]]));
     const pr = P.prisma(st);
     if (st.biblio.changed || !R.listGet(tree, 'prisma') || st.prisma_changed) put('prisma', pr ? list(Object.keys(pr).filter(k => pr[k] !== undefined && pr[k] !== null && !(typeof pr[k] === 'number' && isNaN(pr[k]))).map(k => [k, ['identified', 'filtered', 'screened', 'retracted'].includes(k) ? int(pr[k]) : num(pr[k])])) : NULL);

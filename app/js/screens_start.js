@@ -271,7 +271,12 @@
       a.abstract ? h('details.small', h('summary', t('Abstract found')), h('p', a.abstract)) : null, h('p.small', { style: { margin: '4px 0 0' } }, t('Check the title, DOI and reference below and correct them if needed.'))));
     const upload = h('button.btn.primary.block', { onclick: async () => { const fl = await U.pickFile('.pdf,.docx,.txt,application/pdf'); if (!fl.length) return;
       const b = U.busy(t('Reading the article...'));
-      try { const inf = await ART.read(fl[0]); Object.assign(st.article, inf); st.article.title = inf.title_guess || st.article.title; st.article.doi = inf.doi || st.article.doi; S.changed('article'); b.done();
+      try { const inf = await ART.read(fl[0]);
+        if (st.article.text && st.article.text !== inf.text) {   // the anchor itself changed: everything approved rests on the old one
+          const flagged = S.PHASE_IDS.filter(j => st.phases[j].status === 'approved'); flagged.forEach(j => { st.phases[j].status = 'needs review'; });
+          S.logDecision('Start', 'Anchor article replaced', 'New file: ' + fl[0].name + (flagged.length ? "; phases marked 'needs review': " + flagged.join(', ') : ''));
+          if (flagged.length) U.toast(t('The article changed. Phases {p} need review.', { p: flagged.join(', ') }), 'warn', 12000); }
+        Object.assign(st.article, inf); st.article.title = inf.title_guess || st.article.title; st.article.doi = inf.doi || st.article.doi; S.changed('article'); b.done();
         if (inf.scanned) U.toast(t('Very little text could be read. The PDF may be scanned; run OCR first or upload a text version.'), 'warn', 12000);
         rerender(); const d = O.norm(inf.doi || ''); if (O.isDoi(d)) lookup(d, st.article.cite_style || 'apa', 'auto'); }
       catch (e) { b.done(); U.toast(e.message, 'error', 10000); } } }, U.icon('upload'), a.text ? t('Replace the article file') : t('Choose the article (PDF, Word or text)'));

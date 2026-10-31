@@ -1,10 +1,14 @@
-# ANCHOR Mobile 1.0.1 — ANCHOR Studio by A. Mamdouh Kastour
+# ANCHOR Mobile 1.1.0 — ANCHOR Studio by A. Mamdouh Kastour
 
 *A. Mamdouh Kastour's Scholarly Anchor*, as a phone app: one self-contained web app that runs offline,
 installed either as a **PWA** (any phone with a modern browser) or as an **Android APK**.
 It opens and saves the same `.anchor` project files as ANCHOR Studio 1.5.x on a computer.
 
 In tribute to Mamdouh Kastour (1950–2020).
+
+New in 1.1.0: approved phases are locked ("Edit this approved phase" asks, reopens and logs); every version of every draft is kept
+and can be restored; a new import or an exclusion marks approved phases C, H and O "needs review"; figures remember their data and
+stale ones are marked in phase C; replacing the article flags approved phases. Same behaviour and project fields as ANCHOR Studio 1.6.0.
 
 New in 1.0.1: after the retraction check (Bibliometrics), **Exclude the retracted records** removes them from every analysis.
 Filters cannot bring them back. They are counted in a "Retracted records removed" row of the PRISMA flow, the decision is logged
@@ -63,8 +67,8 @@ The APK is signed with `android/anchor-release.keystore` (alias `anchor`, passwo
 * `test/compare_biblio.js` — every analysis against bibliometrix 4.3.1 on three datasets: 101 tables identical, 1 near
   (a sign the desktop app showed wrongly; fixed in desktop 1.5.2), Louvain networks differ because Louvain is random in R too.
 * `test/compare_tm.js`, `test/compare_net.js` — thematic map, walktrap clusters and network centralities identical to igraph.
-* `test/e2e.js` — 45 checks on an emulated Pixel 7 with mocked live services: set-up, PDF reading, DOI and styles,
-  gates, copy-and-paste and API drafting, all analyses, excluding retracted records, OpenAlex corpus, finder, trend, reports, Arabic/German, project round trip.
+* `test/e2e.js` — 54 checks on an emulated Pixel 7 with mocked live services: set-up, PDF reading, DOI and styles,
+  gates, copy-and-paste and API drafting, all analyses, excluding retracted records, locked approvals, versions and restore, stale figures, OpenAlex corpus, finder, trend, reports, Arabic/German, project round trip.
 * `test/rds_roundtrip.js` — desktop project files are re-serialized byte for byte.
 * `test/offline_test.js` — the PWA reloads and works offline.
 

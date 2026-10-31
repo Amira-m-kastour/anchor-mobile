@@ -41,8 +41,9 @@
     const head = h('div.phase-head', h('div.letter', id), h('div', h('h1', t(p.name)), h('p.q', t(p.question))));
     let banner;
     if (locked) banner = W.alert('', 'lock', !st.setup_ok ? h('span', t('Confirm the set-up on the Start page first.'), ' ', h('a', { href: '#/start' }, t('Open Start'))) : t('Phase {p} must be approved before this phase opens.', { p: S.PHASE_IDS[S.PHASE_IDS.indexOf(id) - 1] }));
-    else if (ph.status === 'approved') banner = W.alert('ok', 'check', t('Approved {d}. Reopen it to make changes.', { d: ph.approved_at || '' }));
-    else if (ph.status === 'needs review') banner = W.alert('warn', 'alert', t('An earlier phase was changed after this one was approved. Review and approve again.'));
+    else if (ph.status === 'approved') banner = W.alert('ok', 'check', t('Approved {d}. The draft is locked.', { d: ph.approved_at || '' }), ' ',
+      h('button.btn.sm', { onclick: () => askEdit(p) }, U.icon('pen'), t('Edit this approved phase')));
+    else if (ph.status === 'needs review') banner = W.alert('warn', 'alert', t('Something this phase rests on changed after it was approved (an earlier phase, the data or the article). Review it and approve again.'));
     else banner = W.alert('', 'info', t('Answer the questions, produce the draft, tick the checks, then decide at the gate.'));
     const needs = W.card(t('What this phase needs'), h('div.needs', h('div', h('h4', t('Input')), h('p', t(p.input))), h('div', h('h4', t('Actions')), h('p', t(p.actions))), h('div', h('h4', t('Output')), h('p', t(p.output)))));
 
@@ -59,13 +60,14 @@
       aiqBox.appendChild(h('div', h('h4', t('Questions raised in the draft')), ph.ai_q.map((q, k) => h('div', h('label.lab', q), W.area(ph.ai_a[k] || '', v => { ph.ai_a[k] = v; S.changed('phases'); }, { rows: 2 }))))); };
     drawAiq();
     const draft = W.area(ph.draft, v => { ph.draft = v; const q = AI.extractQuestions(v); const changed = JSON.stringify(q) !== JSON.stringify(ph.ai_q); ph.ai_q = q; if (changed) { ph.ai_a = q.map((x, k) => ph.ai_a[k] || ''); drawAiq(); }
-      const pp = pendingPrompt[id]; if (pp && v.trim().length >= 50) { S.logPrompt(id, pp, 'prompt'); delete pendingPrompt[id]; } S.changed('phases'); },
+      S.typed[id] = true;
+      const pp = pendingPrompt[id]; if (pp && v.trim().length >= 50) { S.logPrompt(id, pp, 'prompt'); delete pendingPrompt[id]; S.snap(id, 'AI answer pasted (copy-and-paste)'); delete S.typed[id]; } S.changed('phases'); },
       { cls: 'draft', rows: 16, placeholder: t("The draft appears here. Edit it freely: this text is what goes into your report. In copy-and-paste mode, paste Claude's answer here.") });
-    if (locked) draft.readOnly = true;
+    if (locked || ph.status === 'approved') draft.readOnly = true;
     const draftCard = W.card(null, h('div.card-head', h('h3', t('Draft of this phase')), h('div.row',
         h('button.btn.primary.sm', { onclick: () => runDraft(p), disabled: locked }, U.icon('wand'), t('Draft this phase')),
         h('button.btn.sm', { onclick: () => showPrompt(p, makePrompt(p)), disabled: locked }, U.icon('clipboard'), t('Show prompt')))),
-      h('p.hint', modeInfo), draft, aiqBox);
+      h('p.hint', modeInfo), draft, aiqBox, versionsBox(p));
 
     // quality controls and the gate
     const ctl = W.card(t('Quality controls'), h('ul.ctl', p.controls.map(k => h('li', h('b', k), ' ', t(C.controls[k])))));
@@ -87,8 +89,33 @@
       h('p.hint', t('The prompt is added to your AI-use disclosure only when you paste an answer into the draft box. If you do not use it, nothing is recorded.')), ta),
       [{ label: t('Open claude.ai'), onclick: () => { U.open('https://claude.ai/new'); return false; } }, { label: t('Copy prompt'), kind: 'primary', onclick: () => { U.copy(pr, ta).then(ok => U.toast(ok ? t('Prompt copied. Paste it into claude.ai.') : t('Select the text and copy it.'), ok ? 'ok' : 'warn')); return false; } }, { label: t('Close') }], { wide: true, nofocus: true });
   }
+  // ---------- versions of the draft, and editing an approved phase (ask first, then reopen and log)
+  async function askEdit(p) {
+    if (!(await U.confirm(t('Edit approved phase {p}?', { p: p.id }), t("Editing reopens this phase. Later approved phases are marked 'needs review', and the change is logged. The approved text stays in the versions list."),
+      t('Reopen and edit'), t('Keep it approved')))) return false;
+    S.snap(p.id, 'approved version', null, true); S.reopenPhase(p.id, 'Reopened to edit the approved text');
+    U.toast(t('Phase {p} is open for editing. Approve it again when you are done.', { p: p.id }), 'ok'); rerender(); return true;
+  }
+  function versionsBox(p) {
+    const id = p.id; const v = S.st.draft_versions.map((x, k) => [x, k]).filter(x => x[0].phase === id); if (!v.length) return null;
+    const words = s => String(s).trim().split(/\s+/).filter(Boolean).length;
+    return h('details.versions', h('summary', U.icon('clock'), ' ', t('Versions of this draft ({n})', { n: v.length })),
+      h('ul.vlist', v.slice().reverse().map(([x, k]) => h('li', h('div', h('b', x.time), ' · ', vsrc(x.source), ' · ', t('{n} words', { n: words(x.text) })),
+        h('div.btns', h('button.btn.ghost.sm', { onclick: () => U.sheet(x.time + ' - ' + vsrc(x.source), h('pre.vtext', x.text), [{ label: 'OK', kind: 'primary' }]) }, t('show')),
+          h('button.btn.ghost.sm', { onclick: () => restoreVersion(p, k) }, t('restore')))))));
+  }
+  const vsrc = s => { const m = /^(AI draft|AI revision|restored version of) ?\(?(.*?)\)?$/.exec(s);
+    if (m && m[1] === 'restored version of') return t('restored version of {d}', { d: m[2] }); if (m && m[2]) return t(m[1] + ' ({m})', { m: m[2] }); return t(s); };
+  async function restoreVersion(p, k) {
+    const id = p.id; const ph = S.st.phases[id]; const x = S.st.draft_versions[k]; if (!x || x.phase !== id) return;
+    if (ph.status === 'approved' && !(await askEdit(p))) return;
+    S.snap(id, 'your text before a restore'); ph.draft = x.text; ph.ai_q = AI.extractQuestions(x.text); ph.ai_a = ph.ai_q.map((q, j) => ph.ai_a[j] || '');
+    S.snap(id, 'restored version of ' + x.time, x.text); S.logDecision(id, 'Earlier version restored', x.time + ' - ' + x.source); S.changed('phases');
+    U.toast(t('Version of {d} restored.', { d: x.time }), 'ok'); rerender();
+  }
   async function runDraft(p, revision) {
     if (S.isLocked(p.id)) return U.toast(t('This phase is still locked.'), 'warn');
+    if (S.st.phases[p.id].status === 'approved' && !revision) { if (!(await askEdit(p))) return; }
     const m = S.dev().mode; const pr = makePrompt(p, revision);
     if (m === 'manual') return U.toast(t('Manual mode: write the phase in the draft box. Switch mode under Settings to get AI drafts.'));
     if (m === 'prompt') return showPrompt(p, pr);
@@ -96,7 +123,7 @@
     if (!revision && ph.draft.trim() && !(await U.confirm(t('Replace the current draft?'), t('The draft box already has text. A new draft will replace it.'), t('Replace with a new draft'), t('Keep my text')))) return;
     S.logPrompt(p.id, pr, 'api');
     const b = U.busy(t('Drafting phase {id}...', { id: p.id }));
-    try { const out = await AI.draft('api', pr); ph.draft = out; ph.ai_q = AI.extractQuestions(out); ph.ai_a = ph.ai_q.map(() => ''); S.changed('phases'); b.done(); rerender();
+    try { const out = await AI.draft('api', pr); S.snap(p.id, 'your text before a new AI draft'); S.snap(p.id, (revision ? 'AI revision' : 'AI draft') + ' (' + S.dev().api_model + ')', out); ph.draft = out; ph.ai_q = AI.extractQuestions(out); ph.ai_a = ph.ai_q.map(() => ''); S.changed('phases'); b.done(); rerender();
       U.toast(t('Draft ready. Read it, edit it, answer any questions it raises, then decide at the gate.'), 'ok', 8000); }
     catch (e) { b.done(); U.toast(e.message, 'error', 15000); }
   }
@@ -110,7 +137,7 @@
     if (miss.length) return U.sheet(t('Gate {id} is not ready', { id: id }), h('ul', miss.map(x => h('li', x))), [{ label: 'OK', kind: 'primary' }]);
     U.sheet(t('Approve phase {id}?', { id: id }), h('p', t('You confirm that you have read and checked this phase and take responsibility for it.')),
       [{ label: t('Not yet') }, { label: t('Yes, approve'), kind: 'ok', onclick: () => {
-        ph.status = 'approved'; ph.approved_at = U.now(); const i = S.PHASE_IDS.indexOf(id);
+        S.snap(id, 'approved version', null, true); ph.status = 'approved'; ph.approved_at = U.now(); const i = S.PHASE_IDS.indexOf(id);
         if (i < S.PHASE_IDS.length - 1 && st.phases[S.PHASE_IDS[i + 1]].status === 'locked') st.phases[S.PHASE_IDS[i + 1]].status = 'open';
         S.logDecision(id, 'Approved', ph.notes);
         if (i < S.PHASE_IDS.length - 1) { U.toast(t('Phase {a} approved. Phase {b} is open.', { a: id, b: S.PHASE_IDS[i + 1] }), 'ok'); go('#/phase/' + S.PHASE_IDS[i + 1]); }
@@ -120,14 +147,13 @@
     let note = ''; const m = S.dev().mode;
     U.sheet(t('Revision of phase {id}', { id: p.id }), h('div', W.field(t('What should change?'), W.area('', v => { note = v; }, { rows: 4 })),
       h('p.hint', m === 'api' ? t('A new draft will be requested with your instructions.') : m === 'prompt' ? t('A revision prompt will be shown for you to paste into Claude.') : t('Your note is logged; edit the draft yourself.'))),
-      [{ label: t('Cancel') }, { label: t('Request revision'), kind: 'primary', onclick: () => { const ph = S.st.phases[p.id]; if (ph.status === 'approved') ph.status = 'open';
+      [{ label: t('Cancel') }, { label: t('Request revision'), kind: 'primary', onclick: () => { const ph = S.st.phases[p.id]; if (ph.status === 'approved') { S.snap(p.id, 'approved version', null, true); S.reopenPhase(p.id, 'Reopened for a revision'); }
         S.logDecision(p.id, 'Revision requested', note); rerender(); setTimeout(() => runDraft(p, note), 250); } }]);
   }
   function reopen(p) {
     const st = S.st; const ph = st.phases[p.id];
     if (ph.status !== 'approved') return U.toast(t('Only approved phases can be reopened.'));
-    ph.status = 'open'; S.PHASE_IDS.slice(S.PHASE_IDS.indexOf(p.id) + 1).forEach(j => { if (st.phases[j].status === 'approved') st.phases[j].status = 'needs review'; });
-    S.logDecision(p.id, 'Reopened', "Later approved phases marked 'needs review'"); rerender();
+    S.snap(p.id, 'approved version', null, true); S.reopenPhase(p.id, 'Reopened'); rerender();
   }
 
   // ---------- lessons learned and what's in it for me
@@ -201,7 +227,9 @@
   function itemsCard(phase) {
     const its = S.st.report_items.map((it, k) => [it, k]).filter(x => (x[0].phase || 'C') === phase);
     return W.card(phase === 'C' ? t('Bibliometric figures chosen for the report') : phase === 'H' ? t('Research-front trend in the report') : t('Analysis results in the report'),
-      its.length ? h('ol.small', its.map(([it, k]) => h('li', it.label, it.from_desktop ? h('span.muted', ' (' + t('from ANCHOR Studio') + ')') : null, ' ', h('button.btn.ghost.sm', { onclick: () => { S.st.report_items.splice(k, 1); S.changed('report_items'); rerender(); } }, t('remove'))))) :
+      its.length ? h('div', (n => n ? W.alert('warn', 'alert', t('{n} figure(s) were made from earlier data. Remove them, re-run the analyses and add them again.', { n: n })) : null)(its.filter(x => S.staleItems().includes(x[0])).length),
+        h('ol.small', its.map(([it, k]) => h('li', it.label, it.from_desktop ? h('span.muted', ' (' + t('from ANCHOR Studio') + ')') : null, S.staleItems().includes(it) ? h('span.badge.warn', t('earlier data')) : null, ' ',
+          h('button.btn.ghost.sm', { onclick: () => { S.logDecision(it.phase || 'C', 'Figure removed from the report', it.label); S.st.report_items.splice(k, 1); S.changed('report_items'); rerender(); } }, t('remove')))))) :
         h('p.hint', phase === 'C' ? t("None yet. Run analyses under Bibliometrics and press 'Add to report'.") : t('None yet.')),
       phase === 'C' ? h('a.btn.sm', { href: '#/biblio' }, U.icon('chart'), t('Open the Bibliometrics analyses')) : null);
   }

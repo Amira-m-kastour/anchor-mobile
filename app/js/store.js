@@ -6,7 +6,7 @@
   const C = root.ANCHOR_CONTENT;
   const S = {};
   S.APP_VERSION = '1.5.1';
-  S.MOBILE_VERSION = '1.0.1';
+  S.MOBILE_VERSION = '1.1.0';
   S.APP_NAME = 'ANCHOR Studio';
   S.APP_BYLINE = 'by A. Mamdouh Kastour';
   S.APP_BRAND = S.APP_NAME + ' ' + S.APP_BYLINE;
@@ -23,7 +23,7 @@
       crossref_mailto: '', openalex_key: '', fred_key: '' },
     setup: {}, setup_ok: false, article: {},
     phases: Object.fromEntries(S.PHASE_IDS.map(id => [id, S.newPhase()])),
-    decisions: [], prompts: [],
+    decisions: [], prompts: [], draft_versions: [],
     biblio: { M: null, M_all: null, R: null, log: null, dup: 0, source: '', retracted_removed: [] },
     prisma: null, prisma_manual: {}, report_items: [], online: null, online_ds: null,
     analysis: { datasets: [], results: [], include_data: false },
@@ -58,6 +58,23 @@
   S.changed = function (what) { S.dirty = true; S.emit('change', what); S.scheduleSave(); };
   S.logDecision = function (phase, decision, note) { S.st.decisions.push({ time: U.now(), phase: phase, decision: decision, note: note || '' }); S.changed('decisions'); };
   S.logPrompt = function (phase, prompt, mode) { S.st.prompts.push({ time: U.now(), phase: phase, mode: mode || S.st.settings.mode, prompt: prompt }); S.changed('prompts'); };
+  // every version of every phase draft (who or what wrote it, when), restorable; the same table as ANCHOR Studio's
+  S.snap = function (id, source, text, force) {
+    text = text === undefined || text === null ? S.st.phases[id].draft : text; if (!String(text || '').trim()) return false;
+    const v = S.st.draft_versions.filter(x => x.phase === id); const last = v[v.length - 1];
+    if (last && last.text === text && (!force || last.source === source)) return false;   // an approval is recorded even when the text is unchanged
+    S.st.draft_versions.push({ phase: id, time: U.now(), source: source, text: text }); S.changed('draft_versions'); return true;
+  };
+  S.typed = {};   // phases typed in since their last version; kept once a minute
+  setInterval(() => { Object.keys(S.typed).forEach(id => { if (S.st.phases[id]) S.snap(id, 'your edits'); delete S.typed[id]; }); }, 60000);
+  S.reopenPhase = function (id, why) {
+    const st = S.st; const ph = st.phases[id]; if (!['approved', 'needs review'].includes(ph.status)) return false;
+    ph.status = 'open'; const flagged = [];
+    S.PHASE_IDS.slice(S.PHASE_IDS.indexOf(id) + 1).forEach(j => { if (st.phases[j].status === 'approved') { st.phases[j].status = 'needs review'; flagged.push(j); } });
+    S.logDecision(id, why, flagged.length ? "Later approved phases marked 'needs review': " + flagged.join(', ') : ''); S.changed('phases'); return true;
+  };
+  // figures carry the stamp of the data they were made from; a later change of the data makes them stale
+  S.staleItems = () => S.st.report_items.filter(it => it.data_stamp && it.data_stamp !== S.st.biblio.stamp);
   S.isLocked = function (id) {
     const i = S.PHASE_IDS.indexOf(id); if (!S.st.setup_ok) return true;
     return i > 0 && S.st.phases[S.PHASE_IDS[i - 1]].status !== 'approved';

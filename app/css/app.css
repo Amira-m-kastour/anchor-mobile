@@ -207,3 +207,11 @@ table.tbl tr:last-child td { border-bottom: 0; }
 .prisma div { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: .86rem; background: var(--surface); }
 .prisma b { font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* versions of a draft, stale figures */
+.badge { display: inline-block; font-size: .75rem; padding: 1px 6px; border-radius: 6px; margin-inline-start: 6px; vertical-align: 1px; }
+.badge.warn { background: var(--warn-bg); color: var(--ink); border: 1px solid var(--warn); }
+details.versions { margin-top: 8px; font-size: .9rem; }
+details.versions summary { cursor: pointer; color: var(--muted); }
+.vlist { list-style: none; padding: 0; margin: 6px 0 0; }
+.vlist li { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--line); }
+pre.vtext { white-space: pre-wrap; max-height: 60vh; overflow: auto; font-size: .85rem; }

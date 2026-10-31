@@ -67,6 +67,19 @@ let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log('  o
   await click('Approve and open the next phase'); await click('Yes, approve'); await p.waitForTimeout(400);
   s = await st(); ok(s.phases.A.status === 'approved' && s.phases.N.status === 'open' && p.url().endsWith('#/phase/N'), 'phase A approved; N open');
 
+  console.log('Corrections: locked approved draft, versions, restore');
+  await go('#/phase/A'); ok(await p.locator('textarea.draft').evaluate(e => e.readOnly), 'approved draft is read-only');
+  s = await st(); ok(s.draft_versions.some(v => v.phase === 'A' && v.source === 'approved version'), 'approval kept as a version');
+  await click('Edit this approved phase'); await click('Reopen and edit'); await p.waitForTimeout(300);
+  s = await st(); ok(s.phases.A.status === 'open' && s.decisions[s.decisions.length - 1].decision === 'Reopened to edit the approved text', 'edit reopens A and is logged');
+  const approvedText = s.phases.A.draft;
+  await p.locator('textarea.draft').fill(approvedText + '\nA correction I typed.'); await p.evaluate(() => { Object.keys(S.typed).forEach(id => { S.snap(id, 'your edits'); delete S.typed[id]; }); });
+  s = await st(); ok(s.draft_versions.filter(v => v.phase === 'A').map(v => v.source).slice(-2).join('|') === 'approved version|your edits', 'typed text kept as a version');
+  await p.locator('details.versions summary').click(); await p.locator('details.versions li').last().getByText('restore', { exact: true }).click(); await p.waitForTimeout(300);
+  s = await st(); ok(s.phases.A.draft === approvedText && s.decisions[s.decisions.length - 1].decision === 'Earlier version restored', 'approved version restored and logged');
+  await click('Approve and open the next phase'); await click('Yes, approve'); await p.waitForTimeout(400);
+  s = await st(); ok(s.phases.A.status === 'approved', 'phase A approved again');
+
   console.log('Phase N with API mode');
   await p.evaluate(() => { S.setDev({ mode: 'api', api_key: 'sk-ant-test' }); }); await go('#/phase/N');
   await click('Draft this phase'); await p.waitForTimeout(600);
@@ -94,6 +107,13 @@ let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log('  o
     const html = await p.evaluate(() => RP.html(S.st)); ok(html.includes('Retracted records removed (retraction check)') && html.includes('were excluded from the bibliometric analyses'), 'report names the exclusion and the PRISMA row');
     await p.evaluate(() => { const b = S.st.biblio; b.M = b.M_all; }); await go('#/biblio'); await click('Filters'); await click('Apply filters'); await p.waitForTimeout(400);
     ok((await st()).biblio.M.n === after.biblio.M_all.n, 'Apply filters does not bring them back'); }
+  { const s2 = await st(); const stale = await p.evaluate(() => S.staleItems().length);
+    ok(stale === 3 && s2.report_items.every(i => /Data: sample data/.test(i.note)), 'figures carry their data and are stale after the exclusion (' + stale + ')');
+    await go('#/phase/C'); ok((await p.textContent('main')).includes('figure(s) were made from earlier data') && await p.locator('.badge.warn').count() === 3, 'phase C lists the stale figures');
+    const keep = await p.evaluate(() => { const k = {}; ['C', 'H', 'O'].forEach(j => { k[j] = S.st.phases[j].status; S.st.phases[j].status = 'approved'; }); return k; }); await go('#/biblio');
+    await click("Sample dataset (bibliometrix 'management')"); await click('Import'); await p.waitForTimeout(2500);
+    const s3 = await st(); ok(['C', 'H', 'O'].every(j => s3.phases[j].status === 'needs review') && /^Data changed: new data imported/.test(s3.decisions[s3.decisions.length - 1].decision), 'a new import marks C, H and O for review and is logged');
+    await p.evaluate(k => { Object.keys(k).forEach(j => { S.st.phases[j].status = k[j]; }); }, keep); }
 
   console.log('OpenAlex corpus');
   await click('OpenAlex (fetch live, free)'); await click('Fetch'); await p.waitForTimeout(1500);
