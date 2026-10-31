@@ -195,8 +195,8 @@
       W.field(t('Full texts excluded (reasons in notes)'), num('excluded_full')), W.field(t('Studies included'), num('included')));
   }
   function prismaBoxes(pr) { const v = x => x === undefined || x === null || isNaN(x) ? t('pending') : I18N.num(x);
-    return h('div.prisma', [['Records identified from databases', 'identified'], ['Duplicates removed', 'duplicates'], ['Records removed by filters (year, type, language)', 'filtered'], ['Records screened (title/abstract)', 'screened'],
-      ['Records excluded at screening', 'excluded_screen'], ['Reports assessed for eligibility', 'assessed'], ['Reports excluded (with reasons)', 'excluded_full'], ['Studies included in the review', 'included']].map(x => h('div', t(x[0]), ': ', h('b', 'n = ' + v(pr[x[1]]))))); }
+    return h('div.prisma', [['Records identified from databases', 'identified'], ['Duplicates removed', 'duplicates'], ['Retracted records removed (retraction check)', 'retracted'], ['Records removed by filters (year, type, language)', 'filtered'], ['Records screened (title/abstract)', 'screened'],
+      ['Records excluded at screening', 'excluded_screen'], ['Reports assessed for eligibility', 'assessed'], ['Reports excluded (with reasons)', 'excluded_full'], ['Studies included in the review', 'included']].filter(x => x[1] !== 'retracted' || pr.retracted > 0).map(x => h('div', t(x[0]), ': ', h('b', 'n = ' + v(pr[x[1]]))))); }
   root.prismaBoxes = prismaBoxes;
   function itemsCard(phase) {
     const its = S.st.report_items.map((it, k) => [it, k]).filter(x => (x[0].phase || 'C') === phase);

@@ -6,7 +6,7 @@
   const C = root.ANCHOR_CONTENT;
   const S = {};
   S.APP_VERSION = '1.5.1';
-  S.MOBILE_VERSION = '1.0.0';
+  S.MOBILE_VERSION = '1.0.1';
   S.APP_NAME = 'ANCHOR Studio';
   S.APP_BYLINE = 'by A. Mamdouh Kastour';
   S.APP_BRAND = S.APP_NAME + ' ' + S.APP_BYLINE;
@@ -24,7 +24,7 @@
     setup: {}, setup_ok: false, article: {},
     phases: Object.fromEntries(S.PHASE_IDS.map(id => [id, S.newPhase()])),
     decisions: [], prompts: [],
-    biblio: { M: null, M_all: null, R: null, log: null, dup: 0, source: '' },
+    biblio: { M: null, M_all: null, R: null, log: null, dup: 0, source: '', retracted_removed: [] },
     prisma: null, prisma_manual: {}, report_items: [], online: null, online_ds: null,
     analysis: { datasets: [], results: [], include_data: false },
     prereq: S.newPrereq(), focal_oa: null, finder: null

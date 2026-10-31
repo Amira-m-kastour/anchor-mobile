@@ -134,8 +134,8 @@
       if (p.questions.length) P.push(`<h3>${e(r("Researcher's decisions"))}</h3><table class="qa">${p.questions.map(q => { const v = ph.answers[q.id]; return `<tr><td>${e(r(q.label))}</td><td>${e(Array.isArray(v) ? v.map(x => r(x)).join('; ') : v ? r(v) : '-')}</td></tr>`; }).join('')}</table>`);
       if (ph.ai_q.length) P.push(`<h3>${e(r('Questions raised and answered'))}</h3><table>${ph.ai_q.map((q, k) => `<tr><td>${e(q)}</td><td>${e(ph.ai_a[k] || '')}</td></tr>`).join('')}</table>`);
       if (nz(ph.notes)) P.push(`<h3>${e(r('Notes'))}</h3><p>${e(ph.notes)}</p>`);
-      if (p.id === 'N') { const pr = P_prisma(st); if (pr) P.push(`<h3>${e(r('PRISMA 2020 flow'))}</h3><div style="max-width:560px">` + PRISMA_ROWS.map(x => `<div style="border:1px solid #14213D;border-radius:6px;padding:8px 10px;margin:6px 0"><b>${e(r(x[0]))}</b><br>n = ${pv(pr[x[1]])}</div>`).join('') + '</div>');
-        const d = st.online_ds_mobile; if (d) P.push(`<p><b>${e(dsText(d))}</b></p>` + (d.flagged.length ? tbl(['Record', 'DOI', 'Notice'], d.flagged.map(x => [x.record, x.doi, x.notice])) : '')); }
+      if (p.id === 'N') { const pr = P_prisma(st); if (pr) P.push(`<h3>${e(r('PRISMA 2020 flow'))}</h3><div style="max-width:560px">` + prRows(pr).map(x => `<div style="border:1px solid #14213D;border-radius:6px;padding:8px 10px;margin:6px 0"><b>${e(r(x[0]))}</b><br>n = ${pv(pr[x[1]])}</div>`).join('') + '</div>');
+        const f = dsFind(st); if (f) P.push(`<p><b>${e(f.text)}</b></p>` + (f.rows.length ? tbl(['Record', 'DOI', 'Notice', 'Status'], f.rows) : '')); }
       if (p.id === 'A') { const fr = findReport(st); if (fr) P.push(`<h3>${e(r('How the focal article was chosen'))}</h3><p>${e(fr.text)}</p>`, tbl(fr.table.cols, fr.table.rows), `<p class="cap">${e(fr.note)}</p>`); }
       if (p.id === 'R') P.push(`<h3>${e(r('Data availability statement'))}</h3><p>${e(dataAvailability(st))}</p>`);
       const its = itemsFor(st, p.id); if (['C', 'H', 'O'].includes(p.id) && its.length) { P.push(`<h3>${e(r(p.id === 'C' ? 'Bibliometric figures and tables' : p.id === 'H' ? 'Research-front trend' : 'Analysis results'))}</h3>`);
@@ -156,10 +156,18 @@
   };
   const P_prisma = st => root.P.prisma(st);
   const pv = x => (x === undefined || x === null || (typeof x === 'number' && isNaN(x))) ? 'pending' : x;
-  const PRISMA_ROWS = [['Records identified from databases', 'identified'], ['Duplicates removed', 'duplicates'], ['Records removed by filters (year, type, language)', 'filtered'], ['Records screened (title/abstract)', 'screened'],
+  const PRISMA_ROWS = [['Records identified from databases', 'identified'], ['Duplicates removed', 'duplicates'], ['Retracted records removed (retraction check)', 'retracted'], ['Records removed by filters (year, type, language)', 'filtered'], ['Records screened (title/abstract)', 'screened'],
     ['Records excluded at screening', 'excluded_screen'], ['Reports assessed for eligibility', 'assessed'], ['Reports excluded (with reasons)', 'excluded_full'], ['Studies included in the review', 'included']];
-  const dsText = d => !d.flagged.length ? `Retraction check of the bibliometric dataset (${d.checked_at}): ${d.n_doi} of ${d.n_records} records have a DOI; none is retracted according to OpenAlex.`
-    : `Retraction check of the bibliometric dataset (${d.checked_at}): ${d.flagged.length} retracted record(s) found among ${d.n_doi} records with a DOI.`;
+  const prRows = pr => PRISMA_ROWS.filter(x => x[1] !== 'retracted' || pr.retracted > 0);
+  // the retraction check and any retracted records the researcher excluded (same wording as the desktop report)
+  const dsFind = st => {
+    const d = st.online_ds_mobile; const rr = (st.biblio && st.biblio.retracted_removed) || []; if (!d && !rr.length) return null;
+    const gone = new Set(rr.map(x => x.doi)); const fl = d ? d.flagged.filter(x => !gone.has(root.O.norm(x.doi))) : []; const txt = [];
+    if (rr.length) txt.push(`${rr.length} retracted record(s) were excluded from the bibliometric analyses (${rr[0].removed_at}) and are counted in the PRISMA flow.`);
+    if (d) txt.push(!fl.length ? `Retraction check of the bibliometric dataset (${d.checked_at}): ${d.n_doi} of ${d.n_records} records have a DOI; ${rr.length ? 'no retracted record remains' : 'none is retracted'} according to OpenAlex.`
+      : `Retraction check of the bibliometric dataset (${d.checked_at}): ${fl.length} retracted record(s) found among ${d.n_doi} records with a DOI and kept in the analyses.`);
+    return { text: txt.join(' '), rows: rr.map(x => [x.record, x.doi, x.notice, 'excluded']).concat(fl.map(x => [x.record, x.doi, x.notice, 'kept'])) };
+  };
 
   // ---------- Word (.docx), written as WordprocessingML
   const xe = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
@@ -188,7 +196,7 @@
       if (ph.ai_q.length) { body.push(para(r('Questions raised and answered'), 'Heading2'), wtable(['Question', 'Answer'], ph.ai_q.map((q, k) => [q, ph.ai_a[k] || '']))); }
       if (nz(ph.notes)) body.push(para(r('Notes'), 'Heading2'), para(ph.notes));
       if (p.id === 'A') { const fr = findReport(st); if (fr) body.push(para(r('How the focal article was chosen'), 'Heading2'), para(fr.text), wtable(fr.table.cols, fr.table.rows), para(fr.note, null, { sz: 18 })); }
-      if (p.id === 'N') { const pr = P_prisma(st); if (pr) body.push(para(r('PRISMA 2020 flow'), 'Heading2'), wtable(['Stage', 'n'], PRISMA_ROWS.map(x => [x[0], pv(pr[x[1]])]))); const d = st.online_ds_mobile; if (d) body.push(para(dsText(d), null, { b: true })); }
+      if (p.id === 'N') { const pr = P_prisma(st); if (pr) body.push(para(r('PRISMA 2020 flow'), 'Heading2'), wtable(['Stage', 'n'], prRows(pr).map(x => [x[0], pv(pr[x[1]])]))); const f = dsFind(st); if (f) { body.push(para(f.text, null, { b: true })); if (f.rows.length) body.push(wtable(['Record', 'DOI', 'Notice', 'Status'], f.rows)); } }
       if (p.id === 'R') body.push(para(r('Data availability statement'), 'Heading2'), para(dataAvailability(st)));
       if (['C', 'H', 'O'].includes(p.id)) itemsFor(st, p.id).forEach(it => { body.push(para(it.label, 'Heading2')); if (it.png) body.push(img(it.png, it.label)); if (it.note) body.push(para(it.note, null, { sz: 18, color: '5B6675' })); if (it.table) body.push(wtable(it.table.cols, it.table.rows, 15)); });
       const L = lessonsData(p.id, st);
@@ -285,7 +293,7 @@
       L.push("\\subsection*{Lessons learned \\& what's in it for me}", '\\begin{itemize}', Ld.lessons.map(x => '\\item ' + texEsc(x)).join('\n'), '\\end{itemize}', `\\textbf{What's in it for me:} ${texEsc(Ld.wiifm)}\n`,
         Ld.my_lessons ? `\\textbf{My lessons learned:} ${texEsc(Ld.my_lessons)}\n` : '', Ld.my_wiifm ? `\\textbf{What's in it for me (my view):} ${texEsc(Ld.my_wiifm)}\n` : '',
         `\\textbf{References:} \\cite{${keys.join(',')}}.` + Ld.refs.concat(Ld.acc).filter(flagged).map(x => ` \\textbf{${texEsc(x.title)}: ${texEsc(O.statusLabel(x))}.}`).join('') + '\n');
-      if (p.id === 'N') { const pr = P_prisma(st); if (pr) L.push('\\subsection*{PRISMA 2020 flow}', texTable(['Stage', 'n'], PRISMA_ROWS.map(x => [x[0], String(pv(pr[x[1]]))]))); }
+      if (p.id === 'N') { const pr = P_prisma(st); if (pr) L.push('\\subsection*{PRISMA 2020 flow}', texTable(['Stage', 'n'], prRows(pr).map(x => [x[0], String(pv(pr[x[1]]))]))); }
       if (p.id === 'A') { const fr = findReport(st); if (fr) L.push('\\subsection*{How the focal article was chosen}', texEsc(fr.text), '', texTable(fr.table.cols, fr.table.rows, 10, '\\footnotesize'), texEsc(fr.note), ''); }
       if (p.id === 'R') L.push('\\subsection*{Data availability statement}', texEsc(dataAvailability(st)), '');
       if (['C', 'H', 'O'].includes(p.id) && itemsFor(st, p.id).length) { L.push(p.id === 'C' ? '\\subsection*{Bibliometric figures and tables}' : p.id === 'H' ? '\\subsection*{Research-front trend}' : '\\subsection*{Analysis results}');

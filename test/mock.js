@@ -21,6 +21,8 @@ window.ANCHOR_MOCK = function (url, q) {
       abstract_inverted_index: { This: [0], paper: [1], studies: [2], ESG: [3] }, keywords: [{ display_name: 'ESG' }, { display_name: i % 2 ? 'Ratings' : 'Returns' }], concepts: [{ display_name: 'Finance' }], cited_by_count_: 0 });
     if (/\/works\/doi:/.test(u.pathname)) return Object.assign(mk(0), { referenced_works: ['https://openalex.org/W1001'] });
     const n = Math.min(Number(q.per_page) || 25, 25); const results = Array.from({ length: n }, (_, i) => mk(i + 1));
+    if (q.filter && /^doi:.*\|/.test(q.filter)) { const ds = q.filter.slice(4).split('|');   // dataset retraction check: answer for the DOIs asked, the first one retracted
+      return { results: ds.slice(0, 5).map((d, i) => Object.assign({}, results[i], { doi: 'https://doi.org/' + d, is_retracted: i === 0 })), meta: { count: Math.min(5, ds.length) } }; }
     if (q.filter && /^doi:/.test(q.filter)) return { results: results.slice(0, 5), meta: { count: 5 } };
     return { results: results, meta: { count: 1234, next_cursor: null } };
   }

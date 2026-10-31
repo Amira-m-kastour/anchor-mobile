@@ -85,6 +85,15 @@ let pass = 0, fail = 0; const ok = (c, m) => { if (c) { pass++; console.log('  o
   s = await st(); ok(s.report_items.length === 3 && s.report_items.every(i => /bytes/.test(String(i.png))), '3 figures added with PNGs');
   await go('#/biblio'); await click('Check records for retractions (online)'); await p.waitForTimeout(1200);
   ok((await p.textContent('main')).includes('retracted record'), 'retraction check flags the mocked retracted record');
+  { const before = await st(); const nAll = before.biblio.M_all.n, nUse = before.biblio.M.n;
+    await p.getByRole('button', { name: /^Exclude the \d+ retracted record/ }).first().click(); await p.waitForTimeout(800);
+    const after = await st(); const pr = await p.evaluate(() => P.prisma(S.st));
+    ok(after.biblio.M_all.n < nAll && after.biblio.M.n < nUse && after.biblio.retracted_removed.length === nAll - after.biblio.M_all.n && pr.retracted === after.biblio.retracted_removed.length
+       && /retracted record\(s\) excluded from the bibliometric dataset/.test(after.decisions[after.decisions.length - 1].decision), `retracted records excluded (${nAll} -> ${after.biblio.M_all.n}), counted in PRISMA and logged`);
+    ok((await p.textContent('main')).includes('excluded from the analyses') && !(await p.getByRole('button', { name: /^Exclude the/ }).count()), 'exclusion shown; button gone');
+    const html = await p.evaluate(() => RP.html(S.st)); ok(html.includes('Retracted records removed (retraction check)') && html.includes('were excluded from the bibliometric analyses'), 'report names the exclusion and the PRISMA row');
+    await p.evaluate(() => { const b = S.st.biblio; b.M = b.M_all; }); await go('#/biblio'); await click('Filters'); await click('Apply filters'); await p.waitForTimeout(400);
+    ok((await st()).biblio.M.n === after.biblio.M_all.n, 'Apply filters does not bring them back'); }
 
   console.log('OpenAlex corpus');
   await click('OpenAlex (fetch live, free)'); await click('Fetch'); await p.waitForTimeout(1500);

@@ -69,6 +69,7 @@
     const b = g('biblio') || {};
     st.biblio.M_all = P.MfromDF(b.M_all) || P.MfromDF(b.M); st.biblio.M = P.MfromDF(b.M) || st.biblio.M_all;
     st.biblio.dup = Number(b.dup) || 0; st.biblio.source = str(b.source);
+    st.biblio.retracted_removed = b.retracted_removed && b.retracted_removed.__df ? dfRows(b.retracted_removed).map(r => ({ record: str(r.record), doi: str(r.doi), notice: str(r.notice), removed_at: str(r.removed_at) })) : [];
     st.biblio.log = b.log && b.log.__df ? dfRows(b.log).map(r => ({ file: str(r.file), database: str(r.database), records: Number(r.records) || 0 })) : null;
     const pr = plain(g('prisma')); if (pr) for (const k of ['excluded_screen', 'assessed', 'excluded_full', 'included']) if (pr[k] !== null && pr[k] !== undefined) st.prisma_manual[k] = Number(arr(pr[k])[0]);
     st.prereq = Object.assign(S.newPrereq(), plain(g('prereq')) || {});
@@ -96,7 +97,7 @@
   // ---------- save
   P.prisma = function (st) {
     const b = st.biblio; if (!b.log || !b.M_all) return null; const m = st.prisma_manual || {};
-    return { identified: b.log.reduce((s, r) => s + (Number(r.records) || 0), 0), duplicates: b.dup || 0, filtered: b.M_all.n - (b.M ? b.M.n : 0), screened: b.M ? b.M.n : 0,
+    return { identified: b.log.reduce((s, r) => s + (Number(r.records) || 0), 0), duplicates: b.dup || 0, retracted: (b.retracted_removed || []).length, filtered: b.M_all.n - (b.M ? b.M.n : 0), screened: b.M ? b.M.n : 0,
       excluded_screen: m.excluded_screen, assessed: m.assessed, excluded_full: m.excluded_full, included: m.included };
   };
   function phaseR(p) {
@@ -167,9 +168,10 @@
     const b = st.biblio;
     if (st.biblio.changed || !R.listGet(tree, 'biblio')) put('biblio', list([['M', b.M ? P.MtoDF(b.M) : NULL], ['M_all', b.M_all ? P.MtoDF(b.M_all) : NULL], ['R', NULL],
       ['log', b.log ? df(['file', 'database', 'records'], [strCol(b.log.map(r => r.file)), strCol(b.log.map(r => r.database)), intCol(b.log.map(r => r.records))]) : NULL],
-      ['dup', num(b.dup || 0)], ['source', one(b.source || '')]]));
+      ['dup', num(b.dup || 0)], ['source', one(b.source || '')],
+      ['retracted_removed', (b.retracted_removed || []).length ? df(['record', 'doi', 'notice', 'removed_at'], ['record', 'doi', 'notice', 'removed_at'].map(k => strCol(b.retracted_removed.map(r => r[k])))) : NULL]]));
     const pr = P.prisma(st);
-    if (st.biblio.changed || !R.listGet(tree, 'prisma') || st.prisma_changed) put('prisma', pr ? list(Object.keys(pr).filter(k => pr[k] !== undefined && pr[k] !== null && !(typeof pr[k] === 'number' && isNaN(pr[k]))).map(k => [k, ['identified', 'filtered', 'screened'].includes(k) ? int(pr[k]) : num(pr[k])])) : NULL);
+    if (st.biblio.changed || !R.listGet(tree, 'prisma') || st.prisma_changed) put('prisma', pr ? list(Object.keys(pr).filter(k => pr[k] !== undefined && pr[k] !== null && !(typeof pr[k] === 'number' && isNaN(pr[k]))).map(k => [k, ['identified', 'filtered', 'screened', 'retracted'].includes(k) ? int(pr[k]) : num(pr[k])])) : NULL);
     const items = [];
     for (const it of st.report_items) { if (it.from_desktop && originItems && originItems.v[it.node]) items.push(originItems.v[it.node]); else items.push(await P.itemR(it)); }
     put('report_items', ulist(items));

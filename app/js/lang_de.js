@@ -890,4 +890,12 @@ window.ANCHOR_I18N.de = {" and attach the article PDF":" und hängen Sie die PDF
 "tab:C":"Kodieren",
 "tab:H":"Hypothesen",
 "tab:O":"Operationalisieren",
-"tab:R":"Berichten"};
+"tab:R":"Berichten",
+"{n} retracted record(s) excluded from the analyses ({d}).":"{n} zurückgezogene(r) Datensatz/Datensätze aus den Analysen ausgeschlossen ({d}).",
+"They are counted in the PRISMA flow and listed in the decision log. Figures added to the report before this were made with them: re-run and re-add those figures.":"Sie werden im PRISMA-Flussdiagramm gezählt und im Entscheidungsprotokoll aufgeführt. Abbildungen, die vorher zum Bericht hinzugefügt wurden, enthalten sie noch: Analysen erneut ausführen und die Abbildungen neu hinzufügen.",
+"Retraction check {d}: {a} of {b} records have a DOI; {c} found in OpenAlex; no retracted records remain.":"Prüfung auf Rückzüge {d}: {a} von {b} Datensätzen haben eine DOI; {c} in OpenAlex gefunden; keine zurückgezogenen Datensätze mehr vorhanden.",
+"Decide whether to exclude them. Excluding removes them from every analysis, counts them in the PRISMA flow and records the decision.":"Entscheiden Sie, ob Sie sie ausschließen. Ausschließen entfernt sie aus allen Analysen, zählt sie im PRISMA-Flussdiagramm und protokolliert die Entscheidung.",
+"Exclude the {n} retracted record(s)":"{n} zurückgezogene(n) Datensatz/Datensätze ausschließen",
+"These records are no longer in the dataset.":"Diese Datensätze sind nicht mehr im Datensatz.",
+"{n} retracted record(s) excluded. Re-run your analyses; figures already added to the report were made before this change.":"{n} zurückgezogene(r) Datensatz/Datensätze ausgeschlossen. Führen Sie Ihre Analysen erneut aus; bereits zum Bericht hinzugefügte Abbildungen stammen von vor dieser Änderung.",
+"Retracted records removed (retraction check)":"Zurückgezogene Datensätze entfernt (Rückzugsprüfung)"};

@@ -10,7 +10,7 @@
   let dsCheck = null;
 
   function setBiblio(M_all, log, dup, source) {
-    const b = S.st.biblio; b.M_all = M_all; b.M = M_all; b.log = log; b.dup = dup || 0; b.source = source; b.changed = true; filt = null; dsCheck = null; S.bibReady(); S.changed('biblio');
+    const b = S.st.biblio; b.M_all = M_all; b.M = M_all; b.log = log; b.dup = dup || 0; b.source = source; b.retracted_removed = []; b.changed = true; filt = null; dsCheck = null; S.bibReady(); S.changed('biblio');
   }
   root.addReportItem = async function (label, chart, table, phase, note) {
     let png = null; try { if (chart) png = (await CH.png(chart, 1000)).png; } catch (e) { console.warn(e); }
@@ -103,12 +103,31 @@
         b.M = BX.subset(M, keep); b.changed = true; S.bibReady(); S.changed('biblio'); U.toast(t('{n} of {m} records kept.', { n: keep.length, m: M.n }), 'ok'); rerender(); } }, U.icon('filter'), t('Apply filters'))));
   }
   function retractionCard() {
-    const M = S.st.biblio.M; const d = dsCheck; let body;
+    const b = S.st.biblio; const M = b.M; const d = dsCheck; const rr = b.retracted_removed || []; let body;
+    const gone = new Set(rr.map(x => x.doi)); const fl = d ? d.flagged.filter(f => !gone.has(O.norm(f.doi))) : [];
+    const removed = rr.length ? W.alert('warn', 'alert', h('b', t('{n} retracted record(s) excluded from the analyses ({d}).', { n: rr.length, d: rr[0].removed_at })), ' ',
+      t('They are counted in the PRISMA flow and listed in the decision log. Figures added to the report before this were made with them: re-run and re-add those figures.'),
+      h('ul', rr.map(x => h('li', `${x.record} - doi:${x.doi}`)))) : null;
     if (!d) body = h('p.hint', t('Checks every record with a DOI against OpenAlex\'s retraction flag. Only DOIs are sent.'));
-    else if (!d.flagged.length) body = W.alert('ok', 'check', t('Retraction check {d}: {a} of {b} records have a DOI; {c} found in OpenAlex; none retracted.', { d: d.checked_at, a: d.n_doi, b: d.n_records, c: d.n_found }));
-    else body = W.alert('bad', 'alert', h('b', t('{n} retracted record(s) found ({d}).', { n: d.flagged.length, d: d.checked_at })), ' ', t('Decide whether to exclude them (filters) and say so in your PRISMA notes.'), h('ul', d.flagged.map(f => h('li', `${f.record} - ${f.title} (doi:${f.doi})`))));
-    return W.card(t('Retractions'), body, h('button.btn.sm', { onclick: async () => { if (!S.cfg().enabled) return U.toast(t('Switch on the internet features in Settings first.'), 'warn');
+    else if (!fl.length) body = W.alert('ok', 'check', rr.length ? t('Retraction check {d}: {a} of {b} records have a DOI; {c} found in OpenAlex; no retracted records remain.', { d: d.checked_at, a: d.n_doi, b: d.n_records, c: d.n_found })
+      : t('Retraction check {d}: {a} of {b} records have a DOI; {c} found in OpenAlex; none retracted.', { d: d.checked_at, a: d.n_doi, b: d.n_records, c: d.n_found }));
+    else body = W.alert('bad', 'alert', h('b', t('{n} retracted record(s) found ({d}).', { n: fl.length, d: d.checked_at })), ' ',
+      t('Decide whether to exclude them. Excluding removes them from every analysis, counts them in the PRISMA flow and records the decision.'),
+      h('ul', fl.map(f => h('li', `${f.record} - ${f.title} (doi:${f.doi})`))),
+      h('button.btn.sm.danger', { onclick: () => excludeRetracted(fl) }, U.icon('alert'), t('Exclude the {n} retracted record(s)', { n: fl.length })));
+    return W.card(t('Retractions'), h('div', body, removed), h('button.btn.sm', { onclick: async () => { if (!S.cfg().enabled) return U.toast(t('Switch on the internet features in Settings first.'), 'warn');
       const bz = U.busy(t('Checking the records for retractions online...')); try { dsCheck = await O.datasetCheck(M, (a, n) => bz.set(t('Checking {a} of {n} DOIs...', { a: a, n: n }))); S.st.online_ds_mobile = dsCheck; } catch (e) { U.toast(e.message, 'error'); } finally { bz.done(); rerender(); } } }, U.icon('alert'), t('Check records for retractions (online)')));
+  }
+  // removes the retracted records from the imported data (so filters cannot bring them back), counts them for PRISMA and logs the decision
+  function excludeRetracted(fl) {
+    const b = S.st.biblio; const dois = new Set(fl.map(f => O.norm(f.doi)).filter(Boolean));
+    const keepIdx = M => { const k = []; for (let i = 0; i < M.n; i++) if (!dois.has(O.norm((M.DI || [])[i] || ''))) k.push(i); return k; };
+    const kAll = keepIdx(b.M_all), kUse = keepIdx(b.M); const n = b.M_all.n - kAll.length;
+    if (!n) return U.toast(t('These records are no longer in the dataset.'), 'info');
+    const at = U.now(); b.retracted_removed = (b.retracted_removed || []).concat(fl.filter(f => dois.has(O.norm(f.doi))).map(f => ({ record: f.record || f.doi, doi: O.norm(f.doi), notice: f.notice || '', removed_at: at })));
+    b.M_all = BX.subset(b.M_all, kAll); b.M = BX.subset(b.M, kUse); b.changed = true; S.bibReady(); S.changed('biblio');
+    S.logDecision('N', `${n} retracted record(s) excluded from the bibliometric dataset`, Array.from(dois).map(x => 'doi:' + x).join('; '));
+    U.toast(t('{n} retracted record(s) excluded. Re-run your analyses; figures already added to the report were made before this change.', { n: n }), 'warn'); rerender();
   }
   async function exportXlsx() {
     const M = S.st.biblio.M; const keys = Object.keys(M).filter(k => k !== 'n' && Array.isArray(M[k]) && M[k].length === M.n);
