@@ -1,0 +1,12 @@
+# never commit: signing key, built apps, projects, keys, PDFs other than the synthetic test article
+*.keystore
+*.jks
+*.apk
+*.idsig
+*.anchor
+*.rds
+android/build/
+node_modules/
+vendor_src/*/
+*.pdf
+!test/fixtures/article.pdf

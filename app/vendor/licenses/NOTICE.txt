@@ -1,0 +1,31 @@
+ANCHOR Mobile 1.0.0 - ANCHOR Studio by A. Mamdouh Kastour
+A. Mamdouh Kastour's Scholarly Anchor
+
+ANCHOR Mobile is free software under the GNU General Public License, version 3 (GPL-3).
+ANCHOR framework by Amira Mamdouh Kastour. Developed with Claude (Anthropic).
+
+In tribute to Mamdouh Kastour (1950-2020). The tribute portrait (img/tribute.png) is
+(c) the Kastour family, all rights reserved, and is NOT covered by the GPL-3.
+
+Bundled software and data (each under its own licence; full texts in this folder):
+  pdf.js 3.11.174 (Mozilla)                 Apache License 2.0        pdfjs-LICENSE.txt
+  JSZip 3.10.1                              MIT or GPL-3 (MIT used)   jszip-LICENSE.md
+  SheetJS Community Edition 0.18.5          Apache License 2.0        sheetjs-LICENSE.txt
+  Papa Parse 5.4.1                          MIT                       papaparse-LICENSE.txt
+  world-atlas 2.0.2                         ISC                       world-atlas-ISC.txt
+    (Natural Earth 1:110m country outlines, public domain)
+  topojson-client 3.1.0 (build step only)   ISC                       topojson-client-ISC.txt
+  IBM Plex Sans, IBM Plex Sans Arabic       SIL Open Font Licence 1.1 IBM-Plex-OFL.txt
+  Source Serif 4                            SIL Open Font Licence 1.1 Source-Serif-4-OFL.txt
+
+Bibliometric engine: a JavaScript port of functions of the bibliometrix R package 4.3.1
+(Aria & Cuccurullo, 2017; GPL-3), including its country table. The sample dataset
+(data/sample_management.json) is the "management" dataset of the bibliometrixData R package (GPL-3).
+The English stop-word list is from the tidytext R package (stop_words; MIT; lists from the
+SMART, snowball and onix collections).
+
+Live services (used only when you switch them on; their own terms apply):
+  Crossref REST API and doi.org (metadata CC0), OpenAlex (CC0), Research Organization Registry
+  (CC0), ORCID public API, Anthropic Claude API (with your own key, only in API mode).
+
+Licensed data and the published article PDF are never put in files the app makes for sharing.

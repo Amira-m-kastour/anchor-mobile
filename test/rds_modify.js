@@ -1,0 +1,12 @@
+const RDS = require('../app/js/rds.js'); const fs = require('fs');
+(async () => { const p = await RDS.readRDS(new Uint8Array(fs.readFileSync(process.argv[2])));
+  const st = p.value; const js = {}; for (const k of RDS.listKeys(st)) js[k] = RDS.toJS(RDS.listGet(st, k));
+  js.phases.A.draft = 'Edited on the phone: äöü العربية';
+  js.decisions.cols.forEach((c, i) => c.v.push(['2026-10-28 18:00', 'A', 'Edited on phone', 'note ✓'][i]));
+  js.decisions.nrow += 1;
+  js.setup.S_name = 'Amira Mamdouh Kastour'; js.article.title = js.article.title + ' (phone)';
+  for (const k of ['phases', 'decisions', 'setup', 'article']) RDS.listSet(st, k, RDS.fromJS(js[k]));
+  RDS.listSet(st, 'mobile', RDS.fromJS({ saved_by: 'ANCHOR Mobile 1.0.0', n: 3, flags: [true, false, null] }));
+  fs.writeFileSync(process.argv[3], await RDS.writeRDS(p));
+  console.log('M rows', js.biblio.M.nrow, 'cols', js.biblio.M.names.length, '| prompts', js.prompts.nrow, '| A status', js.phases.A.status);
+})();

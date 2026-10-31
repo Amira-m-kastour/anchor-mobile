@@ -1,0 +1,20 @@
+{
+  "name": "ANCHOR Studio by A. Mamdouh Kastour",
+  "short_name": "ANCHOR",
+  "description": "A. Mamdouh Kastour's Scholarly Anchor: article-anchored systematic literature reviews with decision gates, bibliometrics and an AI-use disclosure.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FBFAF6",
+  "theme_color": "#14213D",
+  "lang": "en",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "file_handlers": [{ "action": "./index.html", "accept": { "application/octet-stream": [".anchor"] } }]
+}
