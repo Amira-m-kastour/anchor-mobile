@@ -88,6 +88,7 @@
     if (itemsNode && itemsNode.t === T.VEC) st.report_items = itemsNode.v.map((node, k) => { const it = R.toJS(node) || {};
       const pngNode = R.listGet(node, 'png_raw'); return { id: 'd' + k, label: str(it.label), note: str(it.note), phase: str(it.phase) || 'C', table: it.table && it.table.__df ? { cols: it.table.names, rows: dfRows(it.table).map(r => it.table.names.map(n => r[n])) } : null,
         png: pngNode && pngNode.t === T.RAW ? pngNode.v : null, data_stamp: it.data_stamp ? str(it.data_stamp) : null, from_desktop: true, node: k }; });
+    st.proposal = P.propFromR(g('proposal'));
     st.app_version_saved = str(g('app_version'));
     return st;
   };
@@ -137,6 +138,41 @@
       ['suggestions', list(Object.keys(sg).filter(k => sg[k] && sg[k].length).map(k => [k, df(SG, SG.map(c => ['year', 'cited_by'].includes(c) ? numCol(sg[k].map(x => x[c])) : strCol(sg[k].map(x => x[c]))))]))],
       ['focal', o.focal ? lookupR(o.focal) : NULL], ['errors', chr(o.errors || [])]]);
   }
+  // ---------- the Proposal / thesis tab, in the same shape as ANCHOR Studio's st$proposal
+  const rawOf = x => x && x.__r && x.__r.v ? new Uint8Array(x.__r.v) : null;
+  const numOrNull = x => { const v = Array.isArray(x) ? x[0] : x; return v === null || v === undefined || v === '' || isNaN(Number(v)) ? null : Number(v); };
+  const listOf = x => x === null || x === undefined ? [] : Array.isArray(x) ? x : [x];
+  P.propFromR = function (p) {
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+    const lay = p.layout || {}; const mg = lay.margins || {};
+    const out = { kind: str(p.kind) || 'proposal', preset: str(p.preset) || 'general', lang: str(p.lang) || 'en', cite_style: str(p.cite_style) || 'apa', toc: p.toc === true || (Array.isArray(p.toc) && p.toc[0] === true),
+      page_limit: numOrNull(p.page_limit), word_limit: numOrNull(p.word_limit), only_cited: p.only_cited !== false,
+      layout: { font: str(lay.font) || 'Times New Roman', size: numOrNull(lay.size) || 12, line: numOrNull(lay.line) || 1.5, margins: { l: numOrNull(mg.l) || 2.5, r: numOrNull(mg.r) || 2.5, t: numOrNull(mg.t) || 2.5, b: numOrNull(mg.b) || 2.5 } },
+      template: p.template && p.template.raw ? { name: str(p.template.name), raw: rawOf(p.template.raw) } : null,
+      title: str(p.title), subtitle: str(p.subtitle), author: str(p.author), programme: str(p.programme), supervisor: str(p.supervisor), place: str(p.place), created: str(p.created),
+      sections: listOf(p.sections).map(s => { const lt = {}; if (s.link_text && typeof s.link_text === 'object' && !Array.isArray(s.link_text)) Object.keys(s.link_text).forEach(k => { lt[k] = str(s.link_text[k]); });
+        return { id: str(s.id), kind: str(s.kind), title: str(s.title), links: arr(s.links).filter(Boolean), link_text: lt, text: str(s.text), figs: arr(s.figs).filter(Boolean) }; }),
+      milestones: dfRows(p.milestones).map(r => ({ milestone: str(r.milestone), start: str(r.start), end: str(r.end) })),
+      attachments: listOf(p.attachments).map(a => ({ id: str(a.id), name: str(a.name), role: str(a.role), caption: str(a.caption), raw: rawOf(a.raw), path: str(a.path), size: numOrNull(a.size), added: str(a.added) })),
+      refs: listOf(p.refs).map(r => plain(r)) };
+    return out;
+  };
+  P.propR = function (p) {
+    const lay = p.layout || {}; const mg = lay.margins || {};
+    const margins = { t: T.REAL, v: ['l', 'r', 't', 'b'].map(k => Number(mg[k] || 2.5)), attr: R.mkAttr([['names', R.strs(['l', 'r', 't', 'b'])]]) };
+    const raw = b => b ? { t: T.RAW, v: b } : NULL;
+    return list([['kind', one(p.kind || 'proposal')], ['preset', one(p.preset)], ['lang', one(p.lang)], ['cite_style', one(p.cite_style)], ['toc', lgl(p.toc)],
+      ['page_limit', num(p.page_limit)], ['word_limit', num(p.word_limit)],
+      ['layout', list([['font', one(lay.font)], ['size', num(lay.size)], ['line', num(lay.line)], ['margins', margins]])],
+      ['template', p.template && p.template.raw ? list([['name', one(p.template.name)], ['raw', raw(p.template.raw)]]) : NULL], ['only_cited', lgl(p.only_cited !== false)],
+      ['title', one(p.title)], ['subtitle', one(p.subtitle)], ['author', one(p.author)], ['programme', one(p.programme)], ['supervisor', one(p.supervisor)], ['place', one(p.place)],
+      ['sections', ulist(p.sections.map(s => list([['id', one(s.id)], ['kind', one(s.kind)], ['title', one(s.title)], ['links', chr(s.links)],
+        ['link_text', list(Object.keys(s.link_text || {}).map(k => [k, one(s.link_text[k])]))], ['text', one(s.text)], ['figs', chr(s.figs || [])]])))],
+      ['milestones', df(['milestone', 'start', 'end'], ['milestone', 'start', 'end'].map(k => strCol((p.milestones || []).map(m => m[k]))))],
+      ['attachments', ulist((p.attachments || []).map(a => list([['id', one(a.id)], ['name', one(a.name)], ['role', one(a.role)], ['caption', one(a.caption)], ['raw', raw(a.raw)],
+        ['path', one(a.path || '')], ['size', num(a.size)], ['added', one(a.added)]])))],
+      ['refs', ulist((p.refs || []).map(r => named(r)))], ['created', one(p.created || '')]]);
+  };
   P.itemR = async function (it) {
     const tb = it.table ? df(it.table.cols.map(String), it.table.cols.map((c, j) => { const v = it.table.rows.slice(0, 30).map(r => r[j]); return v.every(x => x === null || typeof x === 'number') ? numCol(v) : strCol(v.map(x => x === null ? null : String(x))); })) : NULL;
     const png = it.png ? { t: T.RAW, v: it.png } : NULL;
@@ -166,6 +202,7 @@
     put('phases', list(S.PHASE_IDS.map(id => [id, phaseR(st.phases[id])])), 3);
     put('decisions', df(['time', 'phase', 'decision', 'note'], ['time', 'phase', 'decision', 'note'].map(k => strCol(st.decisions.map(r => r[k])))));
     put('prompts', df(['time', 'phase', 'mode', 'prompt'], ['time', 'phase', 'mode', 'prompt'].map(k => strCol(st.prompts.map(r => r[k])))));
+    if (st.proposal_changed || R.listGet(tree, 'proposal') === undefined) put('proposal', st.proposal ? P.propR(st.proposal) : NULL);
     put('draft_versions', df(['phase', 'time', 'source', 'text'], ['phase', 'time', 'source', 'text'].map(k => strCol((st.draft_versions || []).map(r => r[k])))));
     const b = st.biblio;
     if (st.biblio.changed || !R.listGet(tree, 'biblio')) put('biblio', list([['M', b.M ? P.MtoDF(b.M) : NULL], ['M_all', b.M_all ? P.MtoDF(b.M_all) : NULL], ['R', NULL],

@@ -68,8 +68,8 @@
   root.go = function (hash) { if (location.hash === hash) render(); else location.hash = hash; };
   function parse() { const p = (location.hash || '#/').replace(/^#\/?/, '').split('/'); return { name: p[0] || 'home', args: p.slice(1) }; }
   const TITLES = { home: () => S.APP_NAME, prereq: () => t('Before you start'), find: () => t('Find a focal article'), start: () => t('Start'),
-    phase: a => t('Phase {id}', { id: a[0] }), phases: () => t('Phases'), biblio: () => t('Bibliometrics'), report: () => t('Report & disclosure'), settings: () => t('Settings'), about: () => t('About'), more: () => t('More') };
-  const TAB = { home: 'home', prereq: 'more', find: 'more', start: 'home', phase: 'phases', phases: 'phases', biblio: 'biblio', report: 'report', settings: 'more', about: 'more', more: 'more' };
+    phase: a => t('Phase {id}', { id: a[0] }), phases: () => t('Phases'), biblio: () => t('Bibliometrics'), report: () => t('Report & disclosure'), settings: () => t('Settings'), about: () => t('About'), more: () => t('More'), proposal: () => t('Proposal / thesis') };
+  const TAB = { home: 'home', prereq: 'more', find: 'more', start: 'home', phase: 'phases', phases: 'phases', biblio: 'biblio', report: 'report', settings: 'more', about: 'more', more: 'more', proposal: 'more' };
   function render() {
     const r = parse(); const scr = SCREENS[r.name] || SCREENS.home; current = r;
     const main = document.getElementById('main'); main.innerHTML = '';
@@ -152,7 +152,8 @@
   SCREENS.more = function () {
     const it = (href, icon, title, sub, onclick) => h(href ? 'a' : 'button', href ? { href: href } : { onclick: onclick, type: 'button' }, U.icon(icon), h('span.d', h('b', title), sub ? h('span', sub) : null), U.icon('next', 'flip'));
     return h('div',
-      h('div.list', it('#/prereq', 'list', t('Before you start'), t('Researcher, affiliation, databases and licences')), it('#/find', 'search', t('Find a focal article'), t('Search OpenAlex, shortlist, compare'))),
+      h('div.list', it('#/prereq', 'list', t('Before you start'), t('Researcher, affiliation, databases and licences')), it('#/find', 'search', t('Find a focal article'), t('Search OpenAlex, shortlist, compare')),
+        it('#/proposal', 'doc', t('Proposal / thesis'), t('Build a research proposal from your approved phases; Word, HTML, LaTeX'))),
       h('div.sect', h('h2', t('Project'))),
       h('div.list', it(null, 'folder', t('Open a saved project (.anchor)'), t('Projects from ANCHOR Studio on a computer open here too'), () => openProject()),
         it(null, 'save', t('Save project (.anchor)'), t('Opens in ANCHOR Studio on a computer'), saveProject),

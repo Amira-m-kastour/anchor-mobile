@@ -26,6 +26,21 @@
         W.field(t('Language of the report headings'), W.seg(langs, RP.lang(), v => { RP.setLang(v); rerender(); })), h('div', { style: { marginTop: '12px' } }, list),
         W.alert('warn', 'alert', t('The project file contains the full text of the article you uploaded. Share it only with people allowed to read that article (for example your supervisor), never publicly.'))),
       W.card(t('Disclosure'), disc, h('div.btns', h('button.btn.sm', { onclick: async () => { const ok = await U.copy(RP.disclosure(st)); U.toast(ok ? t('Copied.') : t('Select the text and copy it.'), ok ? 'ok' : 'warn'); } }, U.icon('copy'), t('Copy')))),
-      preview);
+      decisionLog(), preview);
   };
+  // the decision log: entries are never changed; a correction is added beside the original, with the reason
+  const CORR = 'Correction to the entry of ';
+  function decisionLog() {
+    const d = S.st.decisions; if (!d.length) return null;
+    const corrected = e => d.some(x => x.decision.startsWith(CORR + e.time + ' (' + e.decision + ')'));
+    return W.card(t('Decision log'), h('p.hint', t('Entries cannot be changed or deleted. To correct one, add a correction: it is logged beside the original, with your reason, and appears in every report.')),
+      h('ul.vlist', d.map((e, k) => [e, k]).reverse().slice(0, 60).map(([e]) => h('li', h('div', h('b', e.time), ' · ', e.phase, ' · ', e.decision, corrected(e) ? h('span.badge.warn', t('corrected')) : null, e.note ? h('div.hint', e.note) : null),
+        e.decision.startsWith(CORR) ? null : h('button.btn.ghost.sm', { onclick: () => correct(e) }, t('Add a correction'))))));
+  }
+  function correct(e) {
+    let why = '';
+    U.sheet(t('Add a correction'), h('div', h('p', h('b', `${e.time} · ${e.phase} · ${e.decision}`)), W.field(t('What was wrong, and what is correct?'), W.area('', v => { why = v; }, { rows: 4 }))),
+      [{ label: t('Cancel') }, { label: t('Add the correction'), kind: 'primary', onclick: () => { if (!why.trim()) { U.toast(t('Write what was wrong and what is correct.'), 'warn'); return false; }
+        S.logDecision(e.phase, CORR + e.time + ' (' + e.decision + ')', why.trim()); U.toast(t('Correction added to the decision log.'), 'ok'); rerender(); } }]);
+  }
 })(window);

@@ -1,0 +1,575 @@
+{
+"en": {
+"presets": {
+"proposal": [
+[
+"title",
+"Title page",
+"titlepage",
+""
+],
+[
+"question",
+"Research question and problem",
+"phase",
+"H"
+],
+[
+"concepts",
+"Key concepts",
+"own",
+""
+],
+[
+"state",
+"State of research",
+"phase",
+"C"
+],
+[
+"search",
+"Literature search and bibliometric evidence",
+"phase",
+"N"
+],
+[
+"method",
+"Method and data",
+"phase",
+"O"
+],
+[
+"outline",
+"Provisional outline",
+"own",
+""
+],
+[
+"timeline",
+"Timeline",
+"timeline",
+""
+],
+[
+"resources",
+"Resources, data access and ethics",
+"own",
+""
+],
+[
+"contribution",
+"Expected contribution",
+"own",
+""
+],
+[
+"references",
+"References",
+"references",
+""
+],
+[
+"ai",
+"AI statement",
+"declaration",
+""
+]
+],
+"thesis": [
+[
+"title",
+"Title page",
+"titlepage",
+""
+],
+[
+"abstract",
+"Abstract",
+"own",
+""
+],
+[
+"intro",
+"Introduction",
+"own",
+""
+],
+[
+"literature",
+"Literature review",
+"phase",
+"C"
+],
+[
+"search",
+"Literature search and bibliometric analysis",
+"phase",
+"N"
+],
+[
+"hypotheses",
+"Hypotheses",
+"phase",
+"H"
+],
+[
+"method",
+"Method and data",
+"phase",
+"O"
+],
+[
+"results",
+"Results",
+"own",
+""
+],
+[
+"discussion",
+"Discussion",
+"own",
+""
+],
+[
+"conclusion",
+"Conclusion and outlook",
+"own",
+""
+],
+[
+"appendix",
+"Appendix",
+"appendix",
+""
+],
+[
+"references",
+"References",
+"references",
+""
+],
+[
+"declaration",
+"Declaration and AI statement",
+"declaration",
+""
+]
+]
+},
+"labels": {
+"contents": "Contents",
+"list_figures": "List of figures",
+"list_tables": "List of tables",
+"references": "References",
+"figure": "Figure",
+"table": "Table",
+"milestone": "Milestone",
+"start": "Start",
+"end": "End",
+"declaration": "Declaration",
+"ai_statement": "AI statement (tools used)",
+"tool": "Tool",
+"use": "Kind of use",
+"scope": "Scope",
+"place_date": "Place, date",
+"signature": "Signature",
+"kind_proposal": "Research proposal",
+"kind_thesis": "Thesis",
+"submitted_by": "Submitted by",
+"supervisor": "Supervisor",
+"programme": "Programme",
+"institution": "Institution",
+"date": "Date",
+"appendix_file": "File",
+"appendix_files_note": "These files are supplied with the thesis:",
+"no_ai": "No AI-based tools were used.",
+"use_draft": "Drafting of text (phase draft or section draft)",
+"use_language": "Language revision only (grammar, spelling, style)",
+"use_code": "Generating program code",
+"use_summary": "Summarising abstracts",
+"declaration_text": "I declare that I have written this {kind} independently, that I have used no sources or aids other than those stated, and that I have marked all passages taken from other works, literally or in substance. AI-based tools are listed in the AI statement with the kind and scope of their use."
+}
+},
+"de": {
+"presets": {
+"proposal": [
+[
+"title",
+"Titelblatt",
+"titlepage",
+""
+],
+[
+"question",
+"Forschungsfrage und Problemstellung",
+"phase",
+"H"
+],
+[
+"concepts",
+"Zentrale Begriffe",
+"own",
+""
+],
+[
+"state",
+"Forschungsstand",
+"phase",
+"C"
+],
+[
+"search",
+"Literaturrecherche und bibliometrische Befunde",
+"phase",
+"N"
+],
+[
+"method",
+"Methode und Daten",
+"phase",
+"O"
+],
+[
+"outline",
+"Vorläufige Gliederung",
+"own",
+""
+],
+[
+"timeline",
+"Zeitplan",
+"timeline",
+""
+],
+[
+"resources",
+"Ressourcen, Datenzugang und Ethik",
+"own",
+""
+],
+[
+"contribution",
+"Erwarteter Beitrag",
+"own",
+""
+],
+[
+"references",
+"Literaturverzeichnis",
+"references",
+""
+],
+[
+"ai",
+"KI-Erklärung",
+"declaration",
+""
+]
+],
+"thesis": [
+[
+"title",
+"Titelblatt",
+"titlepage",
+""
+],
+[
+"abstract",
+"Kurzfassung",
+"own",
+""
+],
+[
+"intro",
+"Einleitung",
+"own",
+""
+],
+[
+"literature",
+"Literaturüberblick",
+"phase",
+"C"
+],
+[
+"search",
+"Literaturrecherche und bibliometrische Analyse",
+"phase",
+"N"
+],
+[
+"hypotheses",
+"Hypothesen",
+"phase",
+"H"
+],
+[
+"method",
+"Methode und Daten",
+"phase",
+"O"
+],
+[
+"results",
+"Ergebnisse",
+"own",
+""
+],
+[
+"discussion",
+"Diskussion",
+"own",
+""
+],
+[
+"conclusion",
+"Zusammenfassung und Ausblick",
+"own",
+""
+],
+[
+"appendix",
+"Anhang",
+"appendix",
+""
+],
+[
+"references",
+"Literaturverzeichnis",
+"references",
+""
+],
+[
+"declaration",
+"Erklärung und Hilfsmittelverzeichnis",
+"declaration",
+""
+]
+]
+},
+"labels": {
+"contents": "Inhaltsverzeichnis",
+"list_figures": "Abbildungsverzeichnis",
+"list_tables": "Tabellenverzeichnis",
+"references": "Literaturverzeichnis",
+"figure": "Abbildung",
+"table": "Tabelle",
+"milestone": "Meilenstein",
+"start": "Beginn",
+"end": "Ende",
+"declaration": "Erklärung",
+"ai_statement": "Hilfsmittelverzeichnis (KI-Werkzeuge)",
+"tool": "Werkzeug",
+"use": "Art der Nutzung",
+"scope": "Umfang",
+"place_date": "Ort, Datum",
+"signature": "Unterschrift",
+"kind_proposal": "Exposé",
+"kind_thesis": "Abschlussarbeit",
+"submitted_by": "Vorgelegt von",
+"supervisor": "Betreuung",
+"programme": "Studiengang",
+"institution": "Institution",
+"date": "Datum",
+"appendix_file": "Datei",
+"appendix_files_note": "Diese Dateien werden mit der Arbeit eingereicht:",
+"no_ai": "Es wurden keine KI-gestützten Hilfsmittel verwendet.",
+"use_draft": "Entwurf von Text (Phasenentwurf oder Abschnittsentwurf)",
+"use_language": "Nur sprachliche Überarbeitung (Grammatik, Rechtschreibung, Stil)",
+"use_code": "Erzeugung von Programmcode",
+"use_summary": "Zusammenfassen von Abstracts",
+"declaration_text": "Ich erkläre, dass ich diese(s) {kind} selbstständig verfasst, keine anderen als die angegebenen Quellen und Hilfsmittel benutzt und alle wörtlich oder sinngemäß übernommenen Stellen als solche kenntlich gemacht habe. KI-gestützte Hilfsmittel sind mit Art und Umfang ihrer Nutzung im Hilfsmittelverzeichnis aufgeführt."
+}
+},
+"ar": {
+"presets": {
+"proposal": [
+[
+"title",
+"صفحة العنوان",
+"titlepage",
+""
+],
+[
+"question",
+"سؤال البحث والمشكلة",
+"phase",
+"H"
+],
+[
+"concepts",
+"المفاهيم الرئيسية",
+"own",
+""
+],
+[
+"state",
+"حالة البحث",
+"phase",
+"C"
+],
+[
+"search",
+"البحث في الأدبيات والأدلة الببليومترية",
+"phase",
+"N"
+],
+[
+"method",
+"المنهج والبيانات",
+"phase",
+"O"
+],
+[
+"outline",
+"المخطط المبدئي",
+"own",
+""
+],
+[
+"timeline",
+"الجدول الزمني",
+"timeline",
+""
+],
+[
+"resources",
+"الموارد والوصول إلى البيانات والأخلاقيات",
+"own",
+""
+],
+[
+"contribution",
+"المساهمة المتوقعة",
+"own",
+""
+],
+[
+"references",
+"المراجع",
+"references",
+""
+],
+[
+"ai",
+"بيان استخدام الذكاء الاصطناعي",
+"declaration",
+""
+]
+],
+"thesis": [
+[
+"title",
+"صفحة العنوان",
+"titlepage",
+""
+],
+[
+"abstract",
+"الملخص",
+"own",
+""
+],
+[
+"intro",
+"المقدمة",
+"own",
+""
+],
+[
+"literature",
+"مراجعة الأدبيات",
+"phase",
+"C"
+],
+[
+"search",
+"البحث في الأدبيات والتحليل الببليومتري",
+"phase",
+"N"
+],
+[
+"hypotheses",
+"الفرضيات",
+"phase",
+"H"
+],
+[
+"method",
+"المنهج والبيانات",
+"phase",
+"O"
+],
+[
+"results",
+"النتائج",
+"own",
+""
+],
+[
+"discussion",
+"المناقشة",
+"own",
+""
+],
+[
+"conclusion",
+"الخاتمة والآفاق",
+"own",
+""
+],
+[
+"appendix",
+"الملاحق",
+"appendix",
+""
+],
+[
+"references",
+"المراجع",
+"references",
+""
+],
+[
+"declaration",
+"الإقرار وبيان الأدوات المستخدمة",
+"declaration",
+""
+]
+]
+},
+"labels": {
+"contents": "المحتويات",
+"list_figures": "قائمة الأشكال",
+"list_tables": "قائمة الجداول",
+"references": "المراجع",
+"figure": "شكل",
+"table": "جدول",
+"milestone": "المرحلة",
+"start": "البداية",
+"end": "النهاية",
+"declaration": "إقرار",
+"ai_statement": "بيان أدوات الذكاء الاصطناعي المستخدمة",
+"tool": "الأداة",
+"use": "نوع الاستخدام",
+"scope": "النطاق",
+"place_date": "المكان والتاريخ",
+"signature": "التوقيع",
+"kind_proposal": "مقترح بحثي",
+"kind_thesis": "رسالة",
+"submitted_by": "مقدَّم من",
+"supervisor": "المشرف",
+"programme": "البرنامج",
+"institution": "المؤسسة",
+"date": "التاريخ",
+"appendix_file": "الملف",
+"appendix_files_note": "تُرفق هذه الملفات مع الرسالة:",
+"no_ai": "لم تُستخدم أي أدوات تعتمد على الذكاء الاصطناعي.",
+"use_draft": "صياغة نص (مسودة مرحلة أو مسودة قسم)",
+"use_language": "مراجعة لغوية فقط (القواعد والإملاء والأسلوب)",
+"use_code": "توليد شيفرة برمجية",
+"use_summary": "تلخيص الملخصات",
+"declaration_text": "أقرّ بأنني كتبت هذا الـ{kind} بنفسي، وأنني لم أستخدم مصادر أو أدوات غير المذكورة، وأنني أشرت إلى كل المقاطع المأخوذة من أعمال أخرى نصًّا أو معنى. أدوات الذكاء الاصطناعي مذكورة في بيان الأدوات مع نوع استخدامها ونطاقه."
+}
+}
+}
